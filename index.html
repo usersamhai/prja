@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout | Payment Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Animated background glow */
+        .glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            filter: blur(40px);
+            animation: move 20s infinite alternate;
+        }
+
+        @keyframes move {
+            from { transform: translate(-50%, -50%); }
+            to { transform: translate(50%, 50%); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .qr-frame {
+            position: relative;
+            padding: 12px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .qr-frame:hover {
+            transform: scale(1.02);
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6366f1, transparent);
+            animation: scan 3s linear infinite;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .copy-toast {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .copy-toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="glow"></div>
+
+    <main class="glass-card relative z-10 w-full max-w-md rounded-[2.5rem] p-8 md:p-10 text-white text-center">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04m18.236 0a11.954 11.954 0 00-1.242-7.244M12 2.944a11.954 11.954 0 00-1.242 7.244M12 2.944v18m0-18l-1.242 7.244m0 0a11.954 11.954 0 01-8.618 3.04" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">Complete Payment</h1>
+            <p class="text-slate-400 mt-2 text-sm">Scan the QR code to finish checkout</p>
+        </div>
+
+        <!-- QR Display -->
+        <div class="relative mx-auto w-64 h-64 mb-8">
+            <div class="qr-frame overflow-hidden">
+                <div class="scan-line"></div>
+                <img 
+                    src="0.png" 
+                    alt="Payment QR" 
+                    class="w-full h-full object-contain rounded-xl"
+                    onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PlaceholderPayment';"
+                >
+            </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="space-y-4">
+            <div class="bg-white/5 rounded-2xl p-4 border border-white/5">
+                <span class="block text-xs uppercase tracking-widest text-slate-500 mb-1">Status</span>
+                <div class="flex items-center justify-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="font-semibold text-emerald-400 uppercase text-xs tracking-wider">Awaiting Transaction</span>
+                </div>
+            </div>
+
+            <!-- Address/ID Bar -->
+            <button 
+                onclick="copyAddress()" 
+                class="group relative w-full flex items-center justify-between bg-white/5 hover:bg-white/10 transition-all rounded-2xl p-4 border border-white/5"
+            >
+                <div class="text-left">
+                    <span class="block text-xs uppercase tracking-widest text-slate-500 mb-1">Payment ID</span>
+                    <span id="walletAddress" class="font-mono text-sm text-slate-300">#TRX-9920-XBP1</span>
+                </div>
+                <div class="text-indigo-400 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                    </svg>
+                </div>
+                <!-- Tooltip -->
+                <div id="toast" class="copy-toast absolute -top-10 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] py-1 px-3 rounded-full shadow-lg font-bold uppercase tracking-tighter">
+                    Copied!
+                </div>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <p class="mt-8 text-xs text-slate-500">
+            Secure, encrypted transaction. <br>
+            Protected by Industry-standard encryption.
+        </p>
+    </main>
+
+    <script>
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').innerText;
+            const el = document.createElement('textarea');
+            el.value = address;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+
